@@ -6,27 +6,35 @@ import { saveRun } from '@/lib/run-store';
 import type { RunCreatePayload } from '@/lib/server-types';
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as RunCreatePayload;
+  try {
+    const body = (await request.json()) as RunCreatePayload;
 
-  const runId = randomUUID();
-  const snapshot = buildInitialRunSnapshot({
-    runId,
-    prompt: body.prompt,
-    mode: body.mode,
-    attachments: body.attachments ?? [],
-    sourceLinks: body.sourceLinks ?? [],
-  });
+    const runId = randomUUID();
+    const snapshot = buildInitialRunSnapshot({
+      runId,
+      prompt: body.prompt,
+      mode: body.mode,
+      attachments: body.attachments ?? [],
+      sourceLinks: body.sourceLinks ?? [],
+    });
 
-  await saveRun(snapshot);
+    await saveRun(snapshot);
 
-  await orchestrationQueue.add('start-run', {
-    runId,
-    prompt: body.prompt,
-    mode: body.mode,
-    attachments: body.attachments ?? [],
-    sourceLinks: body.sourceLinks ?? [],
-    userId: body.userId ?? 'local-user',
-  });
+    await orchestrationQueue.add('start-run', {
+      runId,
+      prompt: body.prompt,
+      mode: body.mode,
+      attachments: body.attachments ?? [],
+      sourceLinks: body.sourceLinks ?? [],
+      userId: body.userId ?? 'local-user',
+    });
 
-  return NextResponse.json({ runId });
+    return NextResponse.json({ runId });
+  } catch (error) {
+    console.error('[POST /api/runs] Failed to create run:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
+    );
+  }
 }
