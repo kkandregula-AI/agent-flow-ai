@@ -26,9 +26,13 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const worker = new Worker(
   'agentflow-orchestration',
   async (job) => {
+    console.log(`[worker] job received: id=${job.id} name=${job.name}`);
+
     if (job.name !== 'start-run') return;
 
     const { runId, prompt, mode } = job.data;
+
+    console.log(`[worker] processing start-run for runId=${runId}`);
 
     let totalCost = 0;
     let totalTokens = 0;
@@ -386,6 +390,7 @@ const worker = new Worker(
         avgConfidence,
       });
     } catch (err: any) {
+      console.error(`[worker] job failed for runId=${runId}:`, err);
       await publishRunEvent(runId, {
         type: 'run.failed',
         error: err?.message || 'Worker error',
@@ -394,5 +399,13 @@ const worker = new Worker(
   },
   { connection: bullmqConnection }
 );
+
+worker.on('error', (err) => {
+  console.error('[worker] worker error:', err);
+});
+
+worker.on('failed', (job, err) => {
+  console.error(`[worker] job failed: id=${job?.id} name=${job?.name}`, err);
+});
 
 console.log('🚀 Intelligent Confidence Worker running');
