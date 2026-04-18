@@ -1,12 +1,12 @@
 'use client';
 
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { Bot, Clock3, Coins, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { statusStyles } from './status';
 import type { AgentNodeData } from './types';
 
-export function AgentNode({ data, selected }: NodeProps<AgentNodeData>) {
+export function AgentNode({ data, selected }: NodeProps<Node<AgentNodeData>>) {
   const styles = statusStyles[data.status];
 
   return (
