@@ -28,6 +28,7 @@ type RunPayload = {
 };
 
 type SnapshotBuilder = {
+  runId: string;
   prompt: string;
   mode: Mode;
   metrics: RunMetric[];
@@ -93,6 +94,7 @@ function updateTimeline(timeline: TimelineItem[], label: string, patch: Partial<
 
 function buildSnapshot(builder: SnapshotBuilder): ProjectRunSnapshot {
   return {
+    runId: builder.runId,
     projectTitle: builder.projectTitle,
     mode: builder.mode,
     prompt: builder.prompt,
@@ -244,6 +246,7 @@ async function streamRun(request: NextRequest) {
       replaceOutputSections(finalOutputSections, buildPrdSections({ prompt, mode, attachmentNames, linkHosts, inputSummary }));
 
       const builder: SnapshotBuilder = {
+        runId: crypto.randomUUID(),
         prompt,
         mode,
         metrics,
