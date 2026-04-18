@@ -164,10 +164,11 @@ ${text}`,
     const parsed = JSON.parse(res.text);
 
     return {
-      verdict:
+      verdict: (
         parsed.verdict === 'needs_improvement'
           ? 'needs_improvement'
-          : 'passed',
+          : 'passed'
+      ) as 'needs_improvement' | 'passed',
       summary: parsed.summary || '',
       improvements: Array.isArray(parsed.improvements)
         ? parsed.improvements
