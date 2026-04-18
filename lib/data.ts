@@ -228,6 +228,7 @@ export const baseFinalOutputSections: OutputSection[] = [
 
 export function createInitialSnapshot(): ProjectRunSnapshot {
   return {
+    runId: '',
     projectTitle: 'Privacy-first expense tracker PRD',
     mode: 'smart',
     prompt: defaultPrompt,

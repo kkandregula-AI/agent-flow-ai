@@ -33,6 +33,7 @@ export type OutputSection = {
 };
 
 export type ProjectRunSnapshot = {
+  runId: string;
   projectTitle: string;
   mode: 'fast' | 'smart' | 'deep';
   prompt: string;

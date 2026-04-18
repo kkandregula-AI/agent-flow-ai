@@ -5,6 +5,7 @@ import { createInitialSnapshot } from '@/lib/data';
 import type { AttachmentMeta, RunMode } from '@/lib/server-types';
 
 export function buildInitialRunSnapshot(input: {
+  runId: string;
   prompt: string;
   mode: RunMode;
   projectTitle?: string;
@@ -14,6 +15,7 @@ export function buildInitialRunSnapshot(input: {
   const base = createInitialSnapshot();
   return {
     ...base,
+    runId: input.runId,
     prompt: input.prompt,
     mode: input.mode,
     projectTitle: input.projectTitle ?? base.projectTitle,
