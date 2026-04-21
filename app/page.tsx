@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { estimateRunCost } from '@/lib/cost';
+import { deriveTitleFromPrompt } from '@/lib/title';
 
 type Mode = 'fast' | 'smart' | 'deep';
 type OutputFormat = 'markdown' | 'json';
@@ -92,25 +93,44 @@ function formatPct(value?: number) {
   return `${Math.round((value ?? 0) * 100)}%`;
 }
 
+function normalizeNodes(nodes?: Partial<NodeState>[]): NodeState[] {
+  const base = DEFAULT_NODES.map((n) => ({ ...n }));
+
+  if (!nodes || nodes.length === 0) return base;
+
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+
+  return base.map((defaultNode) => {
+    const incoming = byId.get(defaultNode.id);
+    return incoming
+      ? {
+          ...defaultNode,
+          ...incoming,
+          label: incoming.label || defaultNode.label,
+          role: incoming.role || defaultNode.role,
+          dependsOn: incoming.dependsOn || defaultNode.dependsOn,
+        }
+      : defaultNode;
+  });
+}
+
 function safeMergeSnapshot(current: Snapshot, patch?: Partial<Snapshot> | null): Snapshot {
   if (!patch) return current;
-
-  const mergedNodes =
-    patch.nodes && patch.nodes.length > 0
-      ? patch.nodes
-      : current.nodes ?? DEFAULT_NODES;
 
   return {
     ...current,
     ...patch,
-    nodes: mergedNodes,
+    nodes: normalizeNodes(
+      (patch.nodes as Partial<NodeState>[] | undefined) ||
+        (current.nodes as Partial<NodeState>[] | undefined)
+    ),
     artifactText: patch.artifactText ?? current.artifactText ?? '',
     finalOutputSections: patch.finalOutputSections ?? current.finalOutputSections ?? [],
   };
 }
 
 function updateNode(snapshot: Snapshot, nodeId: string, patch: Partial<NodeState>): Snapshot {
-  const existingNodes = snapshot.nodes ?? DEFAULT_NODES;
+  const existingNodes = normalizeNodes(snapshot.nodes as Partial<NodeState>[] | undefined);
 
   const nextNodes = existingNodes.map((node) =>
     node.id === nodeId ? { ...node, ...patch } : node
@@ -190,8 +210,10 @@ export default function HomePage() {
   const activeRunIdRef = useRef('');
   const runStartRef = useRef<number | null>(null);
 
+  const liveTitle = useMemo(() => deriveTitleFromPrompt(prompt), [prompt]);
+
   const selectedNode = useMemo(
-    () => (snapshot.nodes ?? DEFAULT_NODES).find((n) => n.id === selectedNodeId) ?? (snapshot.nodes ?? DEFAULT_NODES)[0],
+    () => (snapshot.nodes ?? DEFAULT_NODES).find((n) => n.id === selectedNodeId) ?? normalizeNodes(snapshot.nodes as Partial<NodeState>[] | undefined)[0],
     [snapshot.nodes, selectedNodeId]
   );
 
@@ -232,7 +254,7 @@ export default function HomePage() {
 
     setSnapshot({
       ...INITIAL_SNAPSHOT,
-      projectTitle: finalPrompt.length > 42 ? `${finalPrompt.slice(0, 42)}…` : finalPrompt,
+      projectTitle: deriveTitleFromPrompt(finalPrompt),
       prompt: finalPrompt,
       mode: finalMode,
       runStatus: 'queued',
@@ -462,10 +484,16 @@ export default function HomePage() {
             typeof data.avgConfidence === 'number'
               ? data.avgConfidence
               : prev.avgConfidence,
+          nodes: normalizeNodes(prev.nodes as Partial<NodeState>[] | undefined),
         }));
 
-        if (typeof data.totalTokens === 'number') setTotalTokens(data.totalTokens);
-        if (data.output) setArtifact(data.output);
+        if (typeof data.totalTokens === 'number') {
+          setTotalTokens(data.totalTokens);
+        }
+
+        if (data.output) {
+          setArtifact(data.output);
+        }
 
         setIsRunning(false);
         setStreamState('closed');
@@ -519,7 +547,7 @@ export default function HomePage() {
           <div>
             <div className="text-sm text-sky-300">🚀 AgentFlow Studio</div>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-              {snapshot.projectTitle || 'AgentFlow Studio'}
+              {liveTitle || snapshot.projectTitle || 'AgentFlow Studio'}
             </h1>
             <p className="mt-2 text-sm text-neutral-400">{snapshot.connectionLabel}</p>
           </div>
@@ -598,7 +626,7 @@ export default function HomePage() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {(snapshot.nodes ?? []).map((node) => (
+                {normalizeNodes(snapshot.nodes as Partial<NodeState>[] | undefined).map((node) => (
                   <button
                     key={node.id}
                     onClick={() => setSelectedNodeId(node.id)}

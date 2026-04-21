@@ -1,13 +1,9 @@
-import { NextResponse } from 'next/server';
-import { getRunSnapshot } from '@/lib/run-store';
+import { getRun } from '@/lib/run-history';
 
-export async function GET(_request: Request, { params }: { params: Promise<{ runId: string }> }) {
-  const { runId } = await params;
-  const snapshot = await getRunSnapshot(runId);
-
-  if (!snapshot) {
-    return NextResponse.json({ error: 'Run not found' }, { status: 404 });
-  }
-
-  return NextResponse.json(snapshot);
+export async function GET(
+  req: Request,
+  { params }: { params: { runId: string } }
+) {
+  const run = await getRun(params.runId);
+  return Response.json(run);
 }
