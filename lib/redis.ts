@@ -6,11 +6,10 @@ export const redis: RedisClientType = createClient({
   url: redisUrl,
 });
 
-// compatibility exports for older files
 export const redisPub: RedisClientType = redis;
 export const redisSub: RedisClientType = redis;
 
-let connectPromise: Promise<void> | null = null;
+let connectPromise: Promise<RedisClientType> | null = null;
 
 redis.on('error', (err) => {
   console.error('[redis] client error:', err);
