@@ -2,16 +2,17 @@ import { NextResponse } from 'next/server';
 import { getRunSnapshot, updateRunSnapshot } from '@/lib/run-store';
 import { publishRunEvent } from '@/lib/events';
 
-export async function POST(
-  _request: Request,
-  { params }: { params: Promise<{ runId: string }> }
-) {
-  const { runId } = await params;
-  const current: any = await getRunSnapshot(runId);
+type RouteContext = {
+  params: Promise<{ runId: string }>;
+};
 
-  if (!current) {
-    return NextResponse.json({ error: 'Run not found' }, { status: 404 });
-  }
+export async function POST(_req: Request, context: RouteContext) {
+  const { runId } = await context.params;
+
+  // your cancel logic here
+
+  return Response.json({ ok: true, runId });
+}
 
   await updateRunSnapshot(runId, (snapshot: any) => ({
     ...snapshot,

@@ -1,9 +1,11 @@
 import { getRun } from '@/lib/run-history';
 
-export async function GET(
-  req: Request,
-  { params }: { params: { runId: string } }
-) {
-  const run = await getRun(params.runId);
+type RouteContext = {
+  params: Promise<{ runId: string }>;
+};
+
+export async function GET(_req: Request, context: RouteContext) {
+  const { runId } = await context.params;
+  const run = await getRun(runId);
   return Response.json(run);
 }
